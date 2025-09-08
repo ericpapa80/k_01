@@ -1,0 +1,11 @@
+/* OF 기본 네비/푸터 전역 숨김 */
+footer,
+header[role="banner"],
+nav[aria-label="page navigation"],
+.observablehq-nav,
+.observablehq-footer,
+.prev-next,
+.pagination { display:none !important; }
+
+/* 본문 여백 제거 */
+html,body,main,article,.card { margin:0 !important; padding:0 !important; border:0 !important; box-shadow:none !important; }
