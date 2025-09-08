@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>CommandSpace | OF Slides</title>
+  <style>
+    html, body {margin:0; height:100%; background:#0f1115; overflow:hidden;}
+    #frame {width:100vw; height:100vh; border:0; background:#fff;}
+    #hud {position:fixed; bottom:14px; left:50%; transform:translateX(-50%);
+          color:#eaecee; font:14px/1.4 system-ui, sans-serif; opacity:.8;}
+  </style>
+</head>
+<body>
+  <iframe id="frame" src="https://ericpapa80.github.io/k_01/traffic-analysis.html"></iframe>
+  <div id="hud">← / → 로 전환</div>
+  <script>
+    const slides = [
+      "https://ericpapa80.github.io/k_01/traffic-analysis.html",
+      "https://ericpapa80.github.io/k_01/index.html"
+    ];
+    let i = 0;
+    const f = document.getElementById("frame");
+    addEventListener("keydown", e => {
+      if (e.key === "ArrowRight") { i = (i + 1) % slides.length; f.src = slides[i]; }
+      if (e.key === "ArrowLeft")  { i = (i - 1 + slides.length) % slides.length; f.src = slides[i]; }
+    });
+  </script>
+</body>
+</html>
