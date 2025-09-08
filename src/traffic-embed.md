@@ -5,6 +5,9 @@ nav: false      # 이전/다음 페이지 네비 제거
 footer: false   # "Built with Observable" 푸터 제거
 ---
 
+<!-- 전역 embed.css 불러오기 -->
+<link rel="stylesheet" href="/embed.css">
+
 <!-- 기본 여백 제거 -->
 <style>
   html, body {
