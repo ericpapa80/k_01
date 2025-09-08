@@ -29,7 +29,7 @@ display(
       marginRight: 16,
       marginBottom: 56,         // 축/범례 여유
       marginLeft: 56,
-      y: {grid:true, label:"↑ 일평균 유동인구 (만 명)"},
+      y: {grid:true, label:"↑ 일평균 유동인구 (만 명)", ticks: 5 },
       color: {legend: true},    // 잘리면 일단 false로 테스트
       marks: [
         Plot.ruleY([0]),
