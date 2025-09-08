@@ -24,7 +24,7 @@ display(
   resize((width) =>
     Plot.plot({
       width,
-      height: getH(),           // 부모 iframe 높이에 정확히 맞춤
+      height: 480,           // 부모 iframe 높이에 정확히 맞춤
       marginTop: 16,
       marginRight: 16,
       marginBottom: 56,         // 축/범례 여유
