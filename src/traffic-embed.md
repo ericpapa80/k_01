@@ -8,37 +8,45 @@ footer: false
 <link rel="stylesheet" href="/embed.css">
 
 <style>
-  html,body,main,article,.card {margin:0!important; padding:0!important; border:0!important; box-shadow:none!important}
-  body {overflow:hidden} /* 내부 스크롤 제거 */
+  html,body,main,article,.card{margin:0!important;padding:0!important;border:0!important;box-shadow:none!important}
+  body{overflow:hidden}
 </style>
 
 ```js
 import * as Plot from "@observablehq/plot";
+import * as d3 from "d3";
 import {resize} from "@observablehq/stdlib";
 import {traffic} from "./data/traffic.js";
 
-// 현재 뷰포트 높이 반환(스크롤·툴바 오차 최소화)
-const getH = () => Math.max(320, Math.floor(window.innerHeight || 500));
+// 화면 높이를 쓰되 과도하게 커지지 않도록 캡
+const getH = () => Math.min(560, Math.max(380, Math.floor((window.innerHeight || 500) * 0.9)));
 
-display(
-  resize((width) =>
-    Plot.plot({
-      width,
-      height: 480,           // 부모 iframe 높이에 정확히 맞춤
-      marginTop: 16,
-      marginRight: 16,
-      marginBottom: 56,         // 축/범례 여유
-      marginLeft: 56,
-      y: {grid:true, label:"↑ 일평균 유동인구 (만 명)", tickSpacing: 50 },
-      color: {legend: true},    // 잘리면 일단 false로 테스트
-      marks: [
-        Plot.ruleY([0]),
-        Plot.line(traffic, {x:"year", y:"traffic", stroke:"location", strokeWidth:2}),
-        Plot.dot(traffic,  {x:"year", y:"traffic", fill:"location"})
-      ]
-    })
-  )
-);
+display(resize((width) =>
+  Plot.plot({
+    width,
+    height: getH(),
+    marginTop: 16,
+    marginRight: 16,
+    marginBottom: 28,
+    marginLeft: 56,
+    x: {label: null, tickPadding: 4},
+    y: {
+      grid: true,
+      label: "↑ 일평균 유동인구 (만 명)",
+      domain: (() => {
+        const [ymin, ymax] = d3.extent(traffic, d => d.traffic);
+        return [ymin * 0.98, ymax * 1.02]; // 데이터에 밀착
+      })(),
+      ticks: 10
+      // 또는: tickSpacing: 50
+    },
+    color: {legend: true},
+    marks: [
+      Plot.line(traffic, {x:"year", y:"traffic", stroke:"location", strokeWidth:2}),
+      Plot.dot(traffic,  {x:"year", y:"traffic", fill:"location"})
+    ]
+  })
+));
 
-// 폰트 로드 후 재측정으로 하단 잘림 방지
-if (document?.fonts?.ready) document.fonts.ready.then(() => requestAnimationFrame(() => dispatchEvent(new Event("resize"))));
+// 폰트 로드 후 재계산(하단 잘림 방지)
+document?.fonts?.ready?.then(() => requestAnimationFrame(() => dispatchEvent(new Event("resize"))));
