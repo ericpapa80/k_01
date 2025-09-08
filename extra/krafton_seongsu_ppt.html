@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KRAFTON meets SEONGSU - 상세 분석 보고서</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #FAF8F5; /* Off-white background */
+            color: #212529; /* Dark text color */
+        }
+        .slide-container {
+            width: 100%;
+            padding-top: 56.25%; /* 16:9 Aspect Ratio */
+            position: relative;
+        }
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 5%;
+            box-sizing: border-box;
+            background-color: #FFFFFF; /* White background for slides */
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+            border: 1px solid #E9ECEF; /* Subtle border */
+        }
+        .slide.active {
+            display: flex;
+            opacity: 1;
+        }
+        .slide-content {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            /* justify-content: center; is removed for top-alignment by default */
+        }
+        h1, h2, h3, h4 {
+             font-weight: 700; /* Bold */
+             color: #343A40;
+        }
+        h1 { font-size: 3.5rem; line-height: 1.2; }
+        h2 { font-size: 2.25rem; } /* Reduced from 2.5rem */
+        h3 { font-size: 1.75rem; font-weight: 500; } /* Semibold */
+        p, li, span, blockquote {
+            font-weight: 400; /* Regular */
+            font-size: 1.1rem;
+            line-height: 1.8;
+            color: #495057;
+        }
+        strong {
+            font-weight: 500; /* Semibold */
+            color: #212529;
+        }
+        blockquote {
+            border-left: 2px solid #0D6EFD; /* Blue accent */
+            padding-left: 1.5rem;
+            margin: 1rem 0;
+            color: #6C757D;
+            font-style: italic;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1.5rem;
+        }
+        th, td {
+            border: 1px solid #DEE2E6;
+            padding: 1rem;
+            text-align: left;
+            font-size: 0.95rem;
+        }
+        th {
+            background-color: #F8F9FA;
+            font-weight: 500; /* Semibold */
+        }
+        .navigation {
+            position: fixed;
+            bottom: 2%;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            z-index: 10;
+        }
+        .nav-button, .ai-button {
+            background-color: #FFFFFF;
+            color: #343A40;
+            border: 1px solid #CED4DA;
+            padding: 0.5rem 1rem;
+            border-radius: 9999px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .nav-button:hover:not(:disabled), .ai-button:hover {
+            background-color: #F8F9FA;
+            transform: translateY(-2px);
+        }
+        .nav-button:disabled {
+            background-color: #E9ECEF;
+            color: #ADB5BD;
+            cursor: not-allowed;
+        }
+        .ai-button {
+            background: linear-gradient(to right, #0D6EFD, #0DBCFD);
+            color: white;
+            border: none;
+        }
+        .gemini-api-button {
+            background-color: #F8F9FA;
+            border: 1px solid #CED4DA;
+            color: #343A40;
+            font-size: 0.9rem;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 1rem;
+        }
+        .gemini-api-button:hover {
+            background-color: #E9ECEF;
+            transform: translateY(-1px);
+        }
+        #slide-counter {
+            color: #6C757D;
+            font-size: 0.9rem;
+            width: 50px;
+            text-align: center;
+        }
+        .grid-2-col {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 2rem;
+            width: 100%;
+            align-items: start;
+        }
+        .grid-3-col {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            width: 100%;
+            align-items: start;
+        }
+        .placeholder-chart, .placeholder-map, .placeholder-img {
+            width: 100%;
+            height: 100%;
+            min-height: 250px;
+            background-color: #FFFFFF;
+            border: 1px solid #E9ECEF;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            color: #495057;
+            font-size: 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+            padding: 1rem;
+            text-align: left;
+            overflow: hidden;
+        }
+        .placeholder-visual {
+            flex-grow: 1;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 1rem;
+            min-height: 0;
+        }
+        .placeholder-description {
+           background-color: #F8F9FA;
+           padding: 0.75rem;
+           border-radius: 6px;
+           width: 100%;
+           border: 1px solid #DEE2E6;
+        }
+        .placeholder-img img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .placeholder-title {
+            font-weight: 500;
+            color: #343A40;
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+        .placeholder-content {
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+        .text-gradient {
+            background: linear-gradient(to right, #0D6EFD, #0DBCFD);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            color: transparent;
+        }
+        .break-word {
+            display: block;
+        }
+        .h-full { height: 100%; }
+        .w-full { width: 100%; }
+        .object-cover { object-fit: cover; }
+
+        /* AI Modal Styles */
+        #ai-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+        .modal-content {
+            background-color: #FFFFFF;
+            padding: 2rem;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #0D6EFD;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 2rem auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="slide-container">
+        <!-- Slides will be injected here by script -->
+    </div>
+
+    <div class="navigation">
+        <button id="prevBtn" class="nav-button">이전</button>
+        <button id="ai-assistant-btn" class="ai-button">🧠 AI 어시스턴트</button>
+        <span id="slide-counter"></span>
+        <button id="nextBtn" class="nav-button">다음</button>
+    </div>
+
+    <!-- AI Modal -->
+    <div id="ai-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title" class="modal-title">AI 어시스턴트</h3>
+                <button id="modal-close-btn" class="modal-close">&times;</button>
+            </div>
+            <div id="modal-body">
+                <!-- Content will be injected here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const slideData = [
+            // 0. Overture
+            { type: 'title', title: 'KRAFTON meets SEONGSU', subtitle: '크래프톤 신사옥 저층부 공간전략<span class="break-word">상세 분석 보고서</span>', meta: 'v3.0 | 2025. 09. 07. | 빅데이터팀' },
+            { title: 'Project Goal', subtitle: '단순한 로비공간을 넘어,<span class="break-word">크래프톤의 미래를 담는 공간으로</span>', content: `<div class="grid-2-col items-center"><p class="text-xl pb-10">본 보고서의 목표<br><strong>단순 공간 활용을 넘어선,<br>미래 가치를 창출하는 전략적 자산화</strong></p><div class="placeholder-img" style="border:none; padding:0; background:none;"><img src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=2070&auto=format&fit=crop" class="w-full h-full object-cover rounded-lg" alt="A bright, modern architectural interior of a public community space in a corporate building in Seongsu-dong, Seoul, filled with natural light, diverse groups of people collaborating and socializing."></div></div>` },
+            { title: '3 Core Values', subtitle: '공간에 담아야 할 세 가지 핵심 가치', content: `<div class="placeholder-chart" style="border: none; background: none; min-height: 400px;">
+<svg width="100%" height="400" viewBox="0 0 1200 400">
+    <defs>
+        <style>
+            .core-circle { fill: #F8F9FA; stroke: #DEE2E6; stroke-width: 2; }
+            .core-text-title { font-family: 'Noto Sans KR', sans-serif; font-size: 24px; font-weight: 500; fill: #343A40; text-anchor: middle; }
+            .core-text-desc { font-family: 'Noto Sans KR', sans-serif; font-size: 18px; fill: #495057; text-anchor: middle; }
+            .core-line { stroke: #CED4DA; stroke-width: 2; stroke-dasharray: 5, 5; }
+        </style>
+    </defs>
+    <line x1="200" y1="200" x2="1000" y2="200" class="core-line" />
+    <g transform="translate(200, 200)">
+        <circle class="core-circle" r="100"/>
+        <text y="-30" class="core-text-title">Vision Showcase</text>
+        <text dy="1em" class="core-text-desc">'AI Native' 비전의</text>
+        <text dy="2.2em" class="core-text-desc">물리적 쇼케이스</text>
+    </g>
+    <g transform="translate(600, 200)">
+        <circle class="core-circle" r="100"/>
+        <text y="-30" class="core-text-title">Community Asset</text>
+        <text dy="1em" class="core-text-desc">지역 사회와 함께 성장하는</text>
+        <text dy="2.2em" class="core-text-desc">'도시의 거실'</text>
+    </g>
+    <g transform="translate(1000, 200)">
+        <circle class="core-circle" r="100"/>
+        <text y="-30" class="core-text-title">Fandom Nexus</text>
+        <text dy="1em" class="core-text-desc">글로벌 팬덤의</text>
+        <text dy="2.2em" class="core-text-desc">구심점이 될 '성지'</text>
+    </g>
+</svg>
+</div>` },
+            { title: 'Methodology', subtitle: '데이터 기반의 단계적 접근', content: `<p><strong>데이터 분석 → 인사이트 도출 → 전략 수립</strong><br>정량, 정성 데이터를 통합 분석하여 논리의 다리를 구축</p>
+<div class="placeholder-chart mt-4" style="border: none; background: none;">
+<svg width="100%" viewBox="0 0 1000 250">
+    <defs>
+        <marker id="arrowhead" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#0D6EFD" />
+        </marker>
+        <style>
+            .method-circle { fill: #fff; stroke: #0D6EFD; stroke-width: 2.5; }
+            .method-text { font-family: 'Noto Sans KR', sans-serif; font-size: 22px; font-weight: 500; fill: #343A40; text-anchor: middle; }
+            .method-arrow { stroke: #0D6EFD; stroke-width: 2.5; marker-end: url(#arrowhead); }
+            .method-icon { fill: #0D6EFD; }
+        </style>
+    </defs>
+    <g transform="translate(150, 125)">
+        <circle class="method-circle" r="80" />
+        <path class="method-icon" d="M40.32,35.96,27.53,23.17a22.32,22.32,0,1,0-4.36,4.36L35.96,40.32a3.09,3.09,0,0,0,4.36-4.36ZM22.32,35.64A13.32,13.32,0,1,1,35.64,22.32,13.33,13.33,0,0,1,22.32,35.64Z" transform="translate(-22, -22) scale(1.5)" />
+        <text y="50" class="method-text">데이터 분석</text>
+    </g>
+    <line x1="250" y1="125" x2="350" y2="125" class="method-arrow" />
+    <g transform="translate(500, 125)">
+        <circle class="method-circle" r="80" />
+        <path class="method-icon" d="M24,4A12,12,0,0,0,12,16c0,4,2,8,4,10v2a2,2,0,0,0,2,2h4a2,2,0,0,0,2-2V26c2-2,4-6,4-10A12,12,0,0,0,24,4Zm-8,14a8,8,0,1,1,16,0c0,3-1,6-2.5,8h-11C17,24,16,21,16,18Z" transform="translate(-23, -24) scale(1.8)" />
+        <text y="50" class="method-text">인사이트 도출</text>
+    </g>
+    <line x1="600" y1="125" x2="700" y2="125" class="method-arrow" />
+    <g transform="translate(850, 125)">
+        <circle class="method-circle" r="80" />
+        <path class="method-icon" d="M 25 2 L 25 4 L 19.3125 4 L 13.84375 14.90625 L 16.65625 15.09375 L 14.8125 18.09375 L 12 17.90625 L 12 21 L 10 21 L 10 17.90625 L 7.1875 18.09375 L 5.34375 15.09375 L 8.15625 14.90625 L 2.6875 4 L 2 4 L 2 2 L 25 2 z M 23 4 L 4.8125 4 L 9.625 13.09375 L 6.8125 13.28125 L 8.65625 16.28125 L 10 16.09375 L 10 13 L 12 13 L 12 16.09375 L 13.34375 16.28125 L 15.1875 13.28125 L 12.375 13.09375 L 17.1875 4 L 23 4 z" transform="translate(-13.5, -11) scale(3)" />
+        <text y="50" class="method-text">전략 수립</text>
+    </g>
+</svg>
+</div>` },
+            { title: 'Report Structure', subtitle: '보고서 구성', content: `<div class="mt-8 space-y-4 text-center"><p><strong>1부. The Stage: 성수동 DNA 분석</strong> &nbsp;→&nbsp; <strong>2부. The Audience: 타겟 페르소나 분석</strong></p><p class="text-2xl">↓</p><p><strong>3부. The Logic: 분석에서 전략으로</strong> &nbsp;→&nbsp; <strong>4부. The Play: 하이브리드 모델 제안</strong></p></div>` },
+
+            // 1. Seongsu DNA
+            { type: 'section_title', title: '1부', subtitle: 'The Stage<span class="break-word">성수동 DNA 분석</span>' },
+            { title: '1-1. 상권 위상', subtitle: '성장기를 넘어선 <span class="text-gradient">성숙기 상권</span>', content: `<p>더 이상 '뜨는 상권'이 아닌,<br>대한민국 상권의 정점에 도달</p><blockquote>"24년 12월 기준, 강남을 제치고<br>일평균 유동인구 1위 기록" - C&W (2025)</blockquote>` },
+            { title: 'Data Insight', subtitle: '유동인구 비교 분석', content: `
+            <h4 class="text-2xl font-semibold mb-3 text-center">주요 상권 일평균 유동인구 추이 (2022-2024)</h4>
+            <div class="placeholder-chart">
+            <div class="placeholder-visual" id="mount-line_traffic"></div>
+            <div class="placeholder-description">
+                <div class="placeholder-title">라인 차트 (Line Chart)</div>
+                <div class="placeholder-content">
+                <strong>X축:</strong> 시간 (2022년 1분기 ~ 2024년 4분기)<br>
+                <strong>Y축:</strong> 일평균 유동인구 수<br>
+                <strong>데이터 계열:</strong> 성수동, 강남역, 홍대입구, 명동 상권 비교
+                </div>
+            </div>
+            </div>` },
+            { title: 'Data Insight', subtitle: '리테일 공실률 비교', content: `<h4 class="text-2xl font-semibold mb-3 text-center">서울 주요 상권 리테일 공실률 (2024 4Q)</h4><div class="placeholder-chart"><div class="placeholder-visual"><svg width="90%" height="90%" viewBox="0 0 500 250"><g fill="none" stroke-width="1" font-family="sans-serif" font-size="10" text-anchor="middle"><path stroke="#E9ECEF" d="M50 200 H450"/><path stroke-dasharray="4,4" stroke="#e63946" d="M50 100 H450"/><text x="410" y="95" fill="#e63946">서울 평균(16.6%)</text><rect x="70" y="180" width="40" height="20" fill="#0D6EFD"/><text x="90" y="175" fill="#fff" font-weight="bold">2.9%</text><text x="90" y="215">성수</text><rect x="150" y="120" width="40" height="80" fill="#CED4DA"/><text x="170" y="215">가로수길</text><rect x="230" y="80" width="40" height="120" fill="#CED4DA"/><text x="250" y="215">명동</text><rect x="310" y="140" width="40" height="60" fill="#CED4DA"/><text x="330" y="215">홍대</text><rect x="390" y="160" width="40" height="40" fill="#CED4DA"/><text x="410" y="215">강남</text></g></svg></div><div class="placeholder-description"><div class="placeholder-title">바 차트 (Bar Chart)</div><div class="placeholder-content"><strong>X축:</strong> 주요 상권 (성수, 가로수길, 명동, 홍대, 강남)<br><strong>Y축:</strong> 리테일 공실률 (%)<br><strong>내용:</strong> 서울 전체 평균 공실률을 점선으로 표시하여 성수동의 낮은 공실률을 부각.</div></div></div>` },
+            { title: '1-2. 유동인구 특성', subtitle: '상권의 심장, <span class="text-gradient">Dual Engine</span>', content: `<p>두 개의 이질적 인구 그룹이 공존하며<br>상권의 안정성과 활력을 동시 견인</p><div class="grid-2-col mt-8"><div><h4 class="text-3xl font-bold">내부 엔진 (48%)</h4><p>거주민 & 종사자<br><strong>주중 소비, 상권 안정성의 기반</strong></p></div><div><h4 class="text-3xl font-bold">외부 엔진 (52%)</h4><p>방문객<br><strong>주말 소비, 상권 활력의 원천</strong></p></div></div>` },
+            { title: 'Data Insight', subtitle: '주중 vs 주말 유동인구 패턴', content: `<h4 class="text-2xl font-semibold mb-3 text-center">시간대별 유동인구 분석</h4><div class="placeholder-chart"><div class="placeholder-visual"><svg width="95%" height="95%" viewBox="0 0 600 300"><g font-family="sans-serif" font-size="10"><text x="5" y="45">월</text><text x="5" y="85">수</text><text x="5" y="125">금</text><text x="5" y="165">토</text><text x="5" y="205">일</text><text x="60" y="245">0시</text><text x="180" y="245">6시</text><text x="300" y="245">12시</text><text x="420" y="245">18시</text><text x="540" y="245">24시</text><rect x="300" y="30" width="100" height="100" fill="#0D6EFD" opacity="0.6"><title>주중 점심시간</title></rect><rect x="340" y="150" width="120" height="60" fill="#0DBCFD" opacity="0.8"><title>주말 오후</title></rect></g></svg></div><div class="placeholder-description"><div class="placeholder-title">히트맵 차트 (Heatmap Chart)</div><div class="placeholder-content"><strong>X축:</strong> 시간대 (00시 ~ 24시)<br><strong>Y축:</strong> 요일 (월~일)<br><strong>내용:</strong> 시간대별 유동인구 밀도를 색상으로 표현. 주중 점심시간대와 주말 오후 시간대에 인구가 집중되는 '듀얼 엔진' 패턴을 시각화.</div></div></div>` },
+            { title: 'Deep Dive: Residents', subtitle: '내부 엔진 분석: 거주민', content: `<p>높은 구매력의 신규 유입 인구와<br>기존 거주민 간의 라이프스타일 혼재</p><div class="placeholder-chart"><div class="placeholder-visual"><svg width="90%" height="90%" viewBox="0 0 500 250"><g><rect x="50" y="150" width="150" height="50" fill="#0DBCFD" opacity="0.3"/><text x="125" y="175" text-anchor="middle">기존 거주민</text><rect x="250" y="50" width="200" height="150" fill="#0D6EFD" opacity="0.5"/><text x="350" y="125" text-anchor="middle">신규 유입</text><text x="250" y="220" text-anchor="middle" font-family="sans-serif" font-size="12">소득 수준 →</text></g></svg></div><div class="placeholder-description"><div class="placeholder-title">분포 차트</div><div class="placeholder-content">성수동 거주민의 연령 및 소득 분포를 시각화하여, 다양한 계층이 공존하고 있음을 보여줌.</div></div></div>`},
+            { title: 'Deep Dive: Residents', subtitle: 'Segment 1: 로컬 소비 패턴 분석', content: `<h4 class="text-xl font-semibold text-center">방문객 vs 거주민 소비 카테고리 비교</h4><div class="placeholder-chart"><div class="placeholder-visual"><svg width="90%" height="90%" viewBox="0 0 500 250"><g transform="translate(125,125)"><circle r="80" fill="none" stroke="#E9ECEF" stroke-width="30"/><circle r="80" fill="none" stroke="#0D6EFD" stroke-width="30" stroke-dasharray="301.6 201.1" transform="rotate(-90)"/><text text-anchor="middle" font-size="16" font-weight="bold">거주민</text></g><g transform="translate(375,125)"><circle r="80" fill="none" stroke="#E9ECEF" stroke-width="30"/><circle r="80" fill="none" stroke="#0DBCFD" stroke-width="30" stroke-dasharray="100.5 402.1" transform="rotate(-90)"/><text text-anchor="middle" font-size="16" font-weight="bold">방문객</text></g><text x="125" y="230" text-anchor="middle" font-size="12">생활편의 60%</text><text x="375" y="230" text-anchor="middle" font-size="12">생활편의 20%</text></svg></div><div class="placeholder-description"><div class="placeholder-title">도넛 차트 (Doughnut Chart) 2개 비교</div><div class="placeholder-content">[거주민] vs [방문객]의 소비 카테고리(F&B, 쇼핑, 생활편의, 문화/여가 등) 비중을 나란히 비교. 거주민의 '생활편의' 소비 비중이 높은 특징을 시각적으로 강조.</div></div></div>`},
+            { title: 'Deep Dive: Residents', subtitle: 'Segment 2: 커뮤니티 활동 니즈', content: `<h4 class="text-xl font-semibold text-center">"우리 동네에 이런 공간이 있었으면..."</h4><div class="placeholder-chart"><div class="placeholder-visual"><svg width="90%" height="90%" viewBox="0 0 500 250" font-family="sans-serif" font-size="12"><g><text x="10" y="65">키즈 프로그램</text><rect x="100" y="50" width="380" height="25" fill="#0D6EFD" /><text x="485" y="68" fill="#fff">1위</text></g><g><text x="10" y="115">주민 쉼터</text><rect x="100" y="100" width="320" height="25" fill="#0DBCFD" /><text x="425" y="118">2위</text></g><g><text x="10" y="165">플리마켓</text><rect x="100" y="150" width="250" height="25" fill="#CED4DA" /><text x="355" y="168">3위</text></g><g><text x="10" y="215">문화 강좌</text><rect x="100" y="200" width="180" height="25" fill="#CED4DA" /><text x="285" y="218">4위</text></g></svg></div><div class="placeholder-description"><div class="placeholder-title">수평 바 차트 (Horizontal Bar Chart)</div><div class="placeholder-content">'성수동에 필요한 커뮤니티 시설/프로그램'에 대한 설문조사 결과. (예: 1위 키즈 프로그램, 2위 주민 쉼터, 3위 플리마켓, 4위 문화 강좌 순으로 시각화)</div></div></div>`},
+            { title: 'Deep Dive: Workers', subtitle: '내부 엔진 분석: 종사자', content: `<p>IT, 디자인, 패션 등 <strong>고숙련 크리에이티브 직군</strong>이 다수<br>높은 점심값과 휴식 공간 부족에 대한 불만 공통적</p><div class="placeholder-chart"><div class="placeholder-visual"><svg width="90%" height="90%" viewBox="0 0 500 250"><g transform="translate(125,125)"><circle r="80" fill="none" stroke="#E9ECEF" stroke-width="30"/><circle r="80" fill="none" stroke="#0D6EFD" stroke-width="30" stroke-dasharray="201.1 301.6" transform="rotate(-90)"/><text text-anchor="middle" font-size="14">직군분포</text><text text-anchor="middle" dy="20" font-size="12">IT/콘텐츠 40%</text></g><g transform="translate(375,125)"><text text-anchor="middle" font-size="48" font-weight="bold" fill="#343A40">1.5만</text><text text-anchor="middle" dy="25" font-size="14">평균 점심값</text></g></svg></div><div class="placeholder-description"><div class="placeholder-title">데이터 시각화</div><div class="placeholder-content">성수동 종사자의 직군 분포를 파이 차트로, 평균 점심 지출 비용을 인포그래픽 숫자로 표현.</div></div></div>`},
+            { title: 'Deep Dive: Workers', subtitle: 'Segment 1: 런치타임 문제 심층 분석', content: `<h4 class="text-xl font-semibold text-center">The Lunchtime Dilemma</h4><div class="placeholder-chart"><div class="placeholder-visual"><svg width="90%" height="90%" viewBox="0 0 600 200" text-anchor="middle" font-family="sans-serif"><g transform="translate(100,100)"><circle r="60" fill="#F8F9FA"/><text font-size="24" font-weight="bold">1.5만</text><text dy="20" font-size="12">평균 점심값</text></g><g transform="translate(300,100)"><circle r="60" fill="#F8F9FA"/><text font-size="24" font-weight="bold">10분</text><text dy="20" font-size="12">식당 탐색 시간</text></g><g transform="translate(500,100)"><circle r="60" fill="#F8F9FA"/><text font-size="24" font-weight="bold">2.8/5</text><text dy="20" font-size="12">점심 만족도</text></g></svg></div><div class="placeholder-description"><div class="placeholder-title">인포그래픽 (Infographic)</div><div class="placeholder-content">성수동 직장인의 평균 점심값(1.5만원), 식당 탐색 평균 시간(10분), 점심 만족도(5점 만점 2.8점) 등 핵심 지표를 아이콘과 숫자로 시각화.</div></div></div>`},
+            { title: 'Deep Dive: Workers', subtitle: 'Segment 2: 산업 교류 및 성장 니즈', content: `<h4 class="text-xl font-semibold text-center">"성장하고, 연결되고 싶어요"</h4><div class="placeholder-chart"><div class="placeholder-visual"><svg width="90%" height="90%" viewBox="0 0 500 250" font-family="sans-serif" font-size="10"><g><rect x="50" y="50" width="40" height="150" fill="#0D6EFD"/><text x="70" y="215">기술 밋업</text></g><g><rect x="150" y="80" width="40" height="120" fill="#0DBCFD"/><text x="170" y="215">네트워킹</text></g><g><rect x="250" y="120" width="40" height="80" fill="#CED4DA"/><text x="270" y="215">커리어 세미나</text></g></svg></div><div class="placeholder-description"><div class="placeholder-title">바 차트</div><div class="placeholder-content">성수동 IT/콘텐츠 직군 대상 '참여하고 싶은 프로그램' 설문 결과 (1위: 기술 밋업, 2위: 타사 네트워킹, 3위: 커리어 세미나 등)</div></div></div>`},
+            { title: 'Deep Dive: Visitors', subtitle: '외부 엔진 분석: 방문객', content: `<p><strong>From.</strong> 20대 중심, SNS 인증샷 소비<br><strong>To.</strong> 구매력 높은 30-40대, 브랜드 경험 소비</p><div class="placeholder-chart mt-4"><div class="placeholder-visual"><svg width="90%" height="90%" viewBox="0 0 500 250" font-family="sans-serif" font-size="10"><g><rect x="100" y="150" width="80" height="50" fill="#CED4DA"/><rect x="100" y="50" width="80" height="100" fill="#0DBCFD"/><text x="140" y="215">2022</text></g><g><rect x="300" y="120" width="80" height="80" fill="#CED4DA"/><rect x="300" y="50" width="80" height="70" fill="#0D6EFD"/><text x="340" y="215">2025</text></g></svg></div><div class="placeholder-description"><div class="placeholder-title">스택 바 차트 (Stacked Bar Chart)</div><div class="placeholder-content">과거(2022)와 현재(2025)의 방문객 연령 분포 및 방문 목적(단순 F&B vs 브랜드 경험)의 변화를 시각적으로 비교.</div></div></div>` },
+            { title: 'Deep Dive: Visitors', subtitle: 'Segment 1: 방문 목적 세분화', content: `<h4 class="text-xl font-semibold text-center">"성수동에 왜 오셨나요?"</h4><div class="placeholder-chart"><div class="placeholder-visual"><svg width="90%" height="90%" viewBox="0 0 500 300" font-family="sans-serif" font-size="12" text-anchor="middle"><g><rect x="10" y="10" width="240" height="280" fill="#0D6EFD" opacity="0.6"/><text x="130" y="150" fill="white">팝업스토어(40%)</text></g><g><rect x="260" y="10" width="230" height="130" fill="#0DBCFD" opacity="0.6"/><text x="375" y="80" fill="white">맛집탐방(25%)</text></g><g><rect x="260" y="150" width="110" height="140" fill="#CED4DA" opacity="0.6"/><text x="315" y="220" fill="white">카페</text></g><g><rect x="380" y="150" width="110" height="70" fill="#CED4DA" opacity="0.6"/><text x="435" y="190" fill="white">쇼핑</text></g></svg></div><div class="placeholder-description"><div class="placeholder-title">트리맵 차트 (Treemap Chart)</div><div class="placeholder-content">방문 목적의 비중을 면적으로 시각화. (예: 팝업스토어, 맛집탐방, 서울숲, 패션쇼핑, 카페투어 등)</div></div></div>`},
+            { title: 'Deep Dive: Visitors', subtitle: 'Segment 2: 체류 시간 및 공간 분석', content: `
+            <h4 class="text-xl font-semibold text-center">방문객은 어디에서 시간을 보낼까?</h4>
+            <div class="placeholder-map">
+            <div class="placeholder-visual" id="mount-map_seongsu"></div>
+            <div class="placeholder-description">
+                <div class="placeholder-title">지도 위 히트맵 (Geographic Heatmap)</div>
+                <div class="placeholder-content">연무장길, 서울숲 등 체류 시간 시각화.</div>
+            </div>
+            </div>` },
+            { title: 'Top 10 Spots', subtitle: '성수동 주요 방문지', content: `
+            <div class="placeholder-chart">
+            <div class="placeholder-visual" id="mount-table_top10"></div>
+            <div class="placeholder-description">
+                <div class="placeholder-title">상위 10개 방문지 표</div>
+                <div class="placeholder-content">성수동 내 체류 시간/방문객 수 기준 Top10 리스트</div>
+            </div>
+            </div>` },
+            { title: 'Social Insight', subtitle: 'Instagram Hashtag 분석', content: `<h4 class="text-2xl font-semibold mb-3 text-center">#성수동맛집 vs #성수동팝업 vs #성수동카페</h4><div class="placeholder-chart"><div class="placeholder-visual"><svg width="90%" height="90%" viewBox="0 0 500 250" font-family="sans-serif"><text x="100" y="100" font-size="32" text-anchor="middle">#팝업</text><text x="250" y="120" font-size="24" text-anchor="middle">#맛집</text><text x="400" y="90" font-size="28" text-anchor="middle">#카페</text></svg></div><div class="placeholder-description"><div class="placeholder-title">워드 클라우드 & 라인 차트</div><div class="placeholder-content">각 해시태그별 연관 키워드를 워드 클라우드로, 시간 흐름에 따른 언급량 변화를 라인 차트로 시각화.</div></div></div>`},
+            { title: 'Global Buzz', subtitle: 'K-컬처의 새로운 성지', content: `<p>단순 방문을 넘어, 특정 브랜드 경험을 목적으로 하는<br><strong>아시아권 MZ세대 관광객</strong> 폭발적 증가</p>` },
+            { title: 'Global Buzz', subtitle: 'Segment 1: 유입 경로 및 관심도', content: `<h4 class="text-xl font-semibold text-center">Global Interest Heatmap</h4><div class="placeholder-map"><div class="placeholder-visual"><svg width="90%" height="90%" viewBox="0 0 800 400"><path fill="#E9ECEF" d="M400 200 L800 0 L800 400 Z" /><path fill="#0D6EFD" opacity="0.7" d="M650 150 L750 100 L700 250 Z" /><text x="680" y="150" font-size="14">동아시아</text></svg></div><div class="placeholder-description"><div class="placeholder-title">세계 지도 위 히트맵</div><div class="placeholder-content">'Seongsu-dong', '성수동 카페' 등 키워드의 구글 검색량 데이터를 국가별로 시각화. 일본, 대만, 홍콩, 싱가포르 등 아시아권의 관심이 높게 표시됨.</div></div></div>`},
+            { title: 'Global Buzz', subtitle: 'Segment 2: 국적별 방문객 증가율', content: `<h4 class="text-xl font-semibold text-center">Visitor Growth Rate (YoY)</h4><div class="placeholder-chart"><div class="placeholder-visual"><svg width="90%" height="90%" viewBox="0 0 500 250" font-family="sans-serif" font-size="10"><g><rect x="50" y="50" width="40" height="150" fill="#0D6EFD"/><text x="70" y="215">일본</text></g><g><rect x="150" y="80" width="40" height="120" fill="#0DBCFD"/><text x="170" y="215">대만</text></g><g><rect x="250" y="120" width="40" height="80" fill="#CED4DA"/><text x="270" y="215">태국</text></g></svg></div><div class="placeholder-description"><div class="placeholder-title">바 차트</div><div class="placeholder-content">주요 아시아 국가(일본, 대만, 태국 등)의 전년 대비 성수동 방문객(또는 언급량) 증가율을 비교.</div></div></div>`},
+            { title: 'Global Buzz', subtitle: 'Segment 3: 소셜 미디어 키워드 분석', content: `<h4 class="text-xl font-semibold text-center">What They Talk About in Seongsu</h4><div class="grid-3-col">
+                <div class="placeholder-chart !min-h-[200px]" style="padding:1rem;"><p><strong>Japan:</strong><br>#韓国ファッション (한국패션)<br>#聖水洞カフェ (성수동카페)</p></div>
+                <div class="placeholder-chart !min-h-[200px]" style="padding:1rem;"><p><strong>Greater China:</strong><br>#KPOP圣地 (KPOP성지)<br>#网红店 (인기스토어)</p></div>
+                <div class="placeholder-chart !min-h-[200px]" style="padding:1rem;"><p><strong>SEA:</strong><br>#SeongsuVibe<br>#GentleMonster</p></div>
+            </div>`},
+            { title: '1-3. 산업 생태계', subtitle: '미래 산업의 허브, <span class="text-gradient">스마트 캠퍼스</span>', content: `<p>서울시 지정 'IT·문화콘텐츠 산업유통개발진흥지구'<br>단순 상업지구를 넘어, 미래 산업의 중심지로 진화 중</p><p class="mt-4"><strong>시사점:</strong> 1층의 문화콘텐츠 시설화 = <strong>'전략적 투자'</strong></p>` },
+            { title: 'Industry Map', subtitle: 'Tech & Culture Map', content: `<h4 class="text-2xl font-semibold mb-3 text-center">성수동 주요 기업 및 문화시설 분포</h4><div class="placeholder-map"><div class="placeholder-visual"><svg width="80%" height="80%" viewBox="0 0 300 300"><path d="M50 50 Q150 10, 250 50 T50 50" fill="#E9ECEF"/><circle cx="100" cy="100" r="10" fill="#0D6EFD"><title>크래프톤</title></circle><circle cx="150" cy="150" r="10" fill="#343A40"><title>무신사</title></circle><circle cx="200" cy="80" r="10" fill="#0DBCFD"><title>SM엔터</title></circle></svg></div><div class="placeholder-description"><div class="placeholder-title">지도 위 아이콘 맵</div><div class="placeholder-content">성수동 지도 위에 주요 IT 기업(크래프톤, 무신사 등), 엔터테인먼트사(SM), 갤러리, 편집샵 등의 위치를 아이콘으로 표시.</div></div></div>` },
+            { title: 'Cultural Landscape', subtitle: '팝업스토어의 성지', content: `<p>월평균 90개 이상의 팝업과 전시<br>브랜드의 철학과 크리에이티브를 증명하는 각축장</p><div class="placeholder-chart mt-4"><div class="placeholder-visual"><svg width="90%" height="90%" viewBox="0 0 500 250" font-family="sans-serif" font-size="10"><g><rect x="50" y="50" width="40" height="150" fill="#0D6EFD"/><text x="70" y="215">패션/뷰티</text></g><g><rect x="150" y="80" width="40" height="120" fill="#0DBCFD"/><text x="170" y="215">F&B</text></g><g><rect x="250" y="120" width="40" height="80" fill="#CED4DA"/><text x="270" y="215">IP/캐릭터</text></g><g><rect x="350" y="150" width="40" height="50" fill="#CED4DA"/><text x="370" y="215">IT/테크</text></g></svg></div><div class="placeholder-description"><div class="placeholder-title">카테고리 분석 바 차트</div><div class="placeholder-content">최근 1년간 성수동에서 열린 팝업스토어를 카테고리(패션/뷰티, F&B, 캐릭터/IP, IT/테크 등)별로 분석하여 비중을 시각화.</div></div></div>` },
+             { title: '1-4. 도시 개발', subtitle: '글로벌 비즈니스 허브로의 도약', content: `<p>삼표 부지, 전략정비구역 등 대규모 개발 프로젝트 진행<br>서울의 새로운 중심으로 발돋움 준비</p><div class="placeholder-map mt-4"><div class="placeholder-visual"><svg width="80%" height="80%" viewBox="0 0 300 300"><path d="M50 50 Q150 10, 250 50 T50 50" fill="#E9ECEF"/><rect x="50" y="150" width="100" height="50" fill="#0D6EFD" opacity="0.5"/><text x="100" y="180">삼표부지</text><rect x="180" y="80" width="80" height="120" fill="#0DBCFD" opacity="0.5"/><text x="220" y="140">전략정비구역</text></svg></div><div class="placeholder-description"><div class="placeholder-title">미래 개발 계획 지도</div><div class="placeholder-content">성수동 지도 위에 삼표 부지, 성수전략정비구역 등 주요 개발 지역을 영역으로 표시하고, 예상되는 기능(국제업무지구, 고급주거단지 등)을 텍스트로 명시.</div></div></div>` },
+
+            // 2. Personas
+            { type: 'section_title', title: '2부', subtitle: 'The Audience<span class="break-word">타겟 페르소나 분석</span>' },
+            { title: 'Persona Groups', subtitle: '8개의 페르소나, 3개의 핵심 그룹', content: `<p>데이터 기반 잠재 고객 구체화</p><div class="grid-3-col text-center mt-8"><div><h4 class="text-2xl font-semibold mb-3">Residents</h4><p class="text-gray-500">일상의 쉼과 연결</p></div><div><h4 class="text-2xl font-semibold mb-3">Visitors</h4><p class="text-gray-500">특별한 경험과 영감</p></div><div><h4 class="text-2xl font-semibold mb-3">Workers</h4><p class="text-gray-500">효율적 휴식과 성장</p></div></div>` },
+            { title: 'Persona 1A', subtitle: 'Local Guardian: "성수동 터줏대감"', content: `<div class="grid-2-col"><div><p><strong>박서준 (62)</strong><br>성수동 토박이, 은퇴 후 소일거리</p><p><strong>"젊은 사람들 가게는 앉아있기 눈치 보여.<br>동네 사람 편히 쉴 곳 하나 있었으면..."</strong></p></div><div><h4>Needs</h4><ul class="list-disc list-inside"><li>비상업적 휴식 공간</li><li>이웃과의 교류</li><li>지역 정체성 보존</li></ul><h4>Pain Points</h4><ul class="list-disc list-inside text-red-500"><li>젠트리피케이션으로 인한 소외감</li><li>주말의 소음과 번잡함</li></ul></div></div>` },
+            { title: 'Persona 1B', subtitle: 'New Neighbor: "새로운 이웃"', content: `<div class="grid-2-col"><div><p><strong>이지아 가족 (38)</strong><br>최근 입주한 전문직, 초등학생 자녀</p><p><strong>"주말에 아이와 갈 만한 세련된 곳이 마땅찮아요.<br>서울숲 말고 다른 옵션이 필요해요."</strong></p></div><div><h4>Needs</h4><ul class="list-disc list-inside"><li>가족 단위 방문 공간 ('No 노키즈존')</li><li>수준 높은 문화/체험 프로그램</li><li>쾌적하고 안전한 환경</li></ul><h4>Pain Points</h4><ul class="list-disc list-inside text-red-500"><li>가족 친화적 공간 절대 부족</li><li>고질적인 주차난</li></ul></div></div>` },
+             { title: 'Persona 2A', subtitle: 'Trend Explorer: "트렌드 탐험가"', content: `<div class="grid-2-col"><div><p><strong>최유리 (24)</strong><br>대학생, SNS 헤비 유저</p><p><strong>"성수동 팝업은 다 비슷비슷해져요.<br>정말 새롭고, 사진 찍을 만한 곳 없나?"</strong></p></div><div><h4>Needs</h4><ul class="list-disc list-inside"><li>새롭고 독특한 브랜드 경험</li><li>SNS 공유를 위한 '인생샷' 공간</li><li>한정판 굿즈 등 희소성</li></ul><h4>Pain Points</h4><ul class="list-disc list-inside text-red-500"><li>긴 웨이팅으로 인한 피로감</li><li>콘텐츠 없는 '인증샷' 공간에 대한 불만</li></ul></div></div>` },
+            { title: 'Persona 2B', subtitle: 'Inspiration Seeker: "영감 찾는 디자이너"', content: `<div class="grid-2-col"><div><p><strong>강지훈 (35)</strong><br>패션 디자이너</p><p><strong>"영감을 얻으러 왔는데, 사람에 치여요.<br>조용히 공간을 즐기고 사색할 곳이 필요해요."</strong></p></div><div><h4>Needs</h4><ul class="list-disc list-inside"><li>미학적 완성도 높은 기획 전시</li><li>창의적 영감을 줄 강연/워크숍</li><li>사색과 간단한 스케치가 가능한 공간</li></ul><h4>Pain Points</h4><ul class="list-disc list-inside text-red-500"><li>깊이보다 상업성에 치중된 콘텐츠</li><li>인파로 인한 감상 경험 저해</li></ul></div></div>` },
+            { title: 'Persona 2C', subtitle: 'Global Pilgrim: "글로벌 순례자"', content: `<div class="grid-2-col"><div><p><strong>마이클 (28)</strong><br>PUBG 팬, K-컬처 애호가 (미국)</p><p><strong>"한국에 온 김에 PUBG '성지'에 가보고 싶어요.<br>게임 속 세상을 현실에서 느끼고 싶어요."</strong></p></div><div><h4>Needs</h4><ul class="list-disc list-inside"><li>브랜드 '성지' 순례 경험</li><li>게임 세계관을 활용한 몰입형 체험</li><li>오직 여기서만 구할 수 있는 굿즈</li></ul><h4>Pain Points</h4><ul class="list-disc list-inside text-red-500"><li>온라인 경험과 단절된 오프라인 공간</li><li>단순 상품 판매 위주의 팬 공간</li></ul></div></div>` },
+            { title: 'Persona 3A', subtitle: 'Lunch Runner: "점심이 고민인 마케터"', content: `<div class="grid-2-col"><div><p><strong>김나영 (29)</strong><br>성수동 소재 IT기업 마케터</p><p><strong>"점심값은 비싸고, 밥 먹고 쉴 곳은 없어요.<br>짧은 시간이라도 '리프레시'가 필요해요."</strong></p></div><div><h4>Needs</h4><ul class="list-disc list-inside"><li>합리적 가격의 고품질 점심 (Grab & Go)</li><li>식후 짧은 휴식을 위한 쾌적한 공간</li><li>동료와의 가벼운 티타임 장소</li></ul><h4>Pain Points</h4><ul class="list-disc list-inside text-red-500"><li>살인적인 런치플레이션</li><li>점심시간 '카페 유목민' 신세</li></ul></div></div>` },
+            { title: 'Persona 3B', subtitle: 'Networker: "성장 갈증 개발자"', content: `<div class="grid-2-col"><div><p><strong>이현우 (32)</strong><br>게임 스타트업 개발자</p><p><strong>"성수동에 IT회사는 많은데 교류가 없어요.<br>크래프톤의 기술 세미나 같은 게 열리면 좋겠어요."</strong></p></div><div><h4>Needs</h4><ul class="list-disc list-inside"><li>업무 집중 및 아이데이션 공간</li><li>타 분야 전문가와의 네트워킹</li><li>최신 기술 트렌드 학습 기회</li></ul><h4>Pain Points</h4><ul class="list-disc list-inside text-red-500"><li>업계 내 단절감과 정보 접근성 부족</li><li>작업하기 좋은 카페의 만성적 만석</li></ul></div></div>` },
+            { title: 'Persona 3C', subtitle: 'Local Creator: "로컬 크리에이터"', content: `<div class="grid-2-col"><div><p><strong>소피아 (27)</strong><br>성수동 기반 독립 디자이너</p><p><strong>"대기업과 협업할 기회를 찾고 있어요.<br>제 작업을 보여주고 새로운 영감을 얻을 곳이 필요해요."</strong></p></div><div><h4>Needs</h4><ul class="list-disc list-inside"><li>작업물 전시 및 피드백 기회</li><li>다른 분야 크리에이터와의 협업</li><li>대기업 프로젝트 참여</li></ul><h4>Pain Points</h4><ul class="list-disc list-inside text-red-500"><li>높은 임대료로 인한 작업 공간 부족</li><li>대기업과의 협업 기회 부재</li></ul></div></div>` },
+            { title: 'Persona Journey Map', subtitle: 'A Day in Seongsu: 김나영 마케터', content: `<h4 class="text-2xl font-semibold mb-3 text-center">성수동에서의 하루 (가상)</h4><div class="placeholder-chart"><div class="placeholder-visual"><svg width="90%" height="90%" viewBox="0 0 800 250" font-family="sans-serif"><path d="M50 200 C250 50, 350 250, 550 150 C750 50, 750 50, 750 50" stroke="#0D6EFD" stroke-width="2" fill="none"/><text x="150" y="100">😭</text><text x="450" y="200">😊</text></svg></div><div class="placeholder-description"><div class="placeholder-title">사용자 여정 지도 (User Journey Map)</div><div class="placeholder-content">시간대별 활동(출근-점심-업무-퇴근), 방문 장소, 그리고 각 단계에서 느끼는 감정(Pain Point/Delight Point)을 시각적으로 표현하여 사용자의 하루를 입체적으로 이해.</div></div></div>`},
+            { title: 'Persona Insight', subtitle: 'Needs & Pains Matrix', content: `<h4 class="text-2xl font-semibold mb-3 text-center">페르소나 니즈-불편 매트릭스</h4><div class="placeholder-chart"><div class="placeholder-visual"><svg width="90%" height="90%" viewBox="0 0 400 400" font-family="sans-serif" text-anchor="middle"><path d="M200 20 H200 380 M20 200 H380" stroke="#CED4DA"/><text x="100" y="30">개인</text><text x="300" y="30">커뮤니티</text><text transform="rotate(-90 15 200)" x="15" y="300">경험</text><text transform="rotate(-90 15 200)" x="15" y="100">휴식</text><circle cx="100" cy="100" r="10" fill="#0D6EFD"><title>박서준</title></circle><circle cx="300" cy="300" r="10" fill="#0DBCFD"><title>최유리</title></circle></svg></div><div class="placeholder-description"><div class="placeholder-title">4분면 차트 (Quadrant Chart)</div><div class="placeholder-content"><strong>X축:</strong> 니즈 (휴식 ↔ 경험)<br><strong>Y축:</strong> 동기 (개인 ↔ 커뮤니티)<br>정의된 8개의 페르소나가 각 사분면 어디에 위치하는지 표시하여 그룹 간의 관계와 핵심 니즈를 한눈에 파악.</div></div></div>` },
+            { title: 'Persona Insight', subtitle: '공간에 대한 상이한 기대', content: `<table><thead><tr><th>그룹</th><th>핵심 니즈</th><th>공간에 대한 기대</th></tr></thead><tbody><tr><td>거주민</td><td>휴식, 커뮤니티, 가족</td><td class="text-gradient"><strong>공원, 도시의 거실</strong></td></tr><tr><td>방문객</td><td>경험, 영감, 희소성</td><td class="text-gradient"><strong>놀이터, 갤러리, 성지</strong></td></tr><tr><td>종사자</td><td>효율, 리프레시, 성장</td><td class="text-gradient"><strong>라운지, 테크 살롱</strong></td></tr></tbody></table>` },
+
+            // 3. Logic Bridge
+            { type: 'section_title', title: '3부', subtitle: 'The Logic<span class="break-word">분석에서 전략으로</span>' },
+            { title: 'Insight Synthesis', subtitle: '4가지 핵심 인사이트 도출', content: `<div class="grid-2-col"><div><h4 class="text-2xl font-semibold mb-3">1. Dual Engine의 공존</h4><p>'일상'과 '이벤트'의<br>조화로운 공존 필수</p></div><div><h4 class="text-2xl font-semibold mb-3">2. 다층적 Needs</h4><p>하나의 공간에 대한<br>상이하고 복합적인 기대</p></div><div><h4 class="text-2xl font-semibold mb-3">3. 크래프톤의 기회</h4><p>추상적 '비전'을<br>구체적 '경험'으로 전환할 최적의 장소</p></div><div><h4 class="text-2xl font-semibold mb-3">4. 기업 시민의 역할</h4><p>ESG 경영과<br>지역사회 '상생'에 대한 의지</p></div></div>` },
+            { title: 'Strategic Framework', subtitle: '인사이트에서 5대 전략 기둥으로', content: `<p>도출된 인사이트를 기반으로,<br>공간의 방향성을 정의하는 5개의 전략 기둥 수립</p><div class="placeholder-chart mt-4"><div class="placeholder-visual"><svg width="90%" height="90%" viewBox="0 0 800 300"><g text-anchor="middle" font-family="sans-serif"><rect x="50" y="50" width="150" height="50" fill="#F8F9FA" stroke="#DEE2E6"/><text x="125" y="80">인사이트 1</text><rect x="50" y="150" width="150" height="50" fill="#F8F9FA" stroke="#DEE2E6"/><text x="125" y="180">인사이트 2</text><path d="M210 75 H300 V150 H400" stroke="#CED4DA" fill="none" stroke-width="2"/><path d="M210 175 H300 V150 H400" stroke="#CED4DA" fill="none" stroke-width="2"/><rect x="410" y="125" width="150" height="50" fill="#0D6EFD" opacity="0.1" stroke="#0D6EFD"/><text x="485" y="155">전략 1</text></g></svg></div><div class="placeholder-description"><div class="placeholder-title">흐름도 (Flowchart)</div><div class="placeholder-content">4개의 핵심 인사이트가 어떻게 5개의 핵심 전략 방향('도시의 거실', '하이퍼로컬 허브' 등)으로 논리적으로 연결되는지 화살표와 키워드로 시각화.</div></div></div>` },
+            { title: 'Strategy 1', subtitle: '도시의 거실 <span class="text-lg font-normal">(Urban Living Room)</span>', isStrategy: true, content: `<div class="grid-2-col items-center"><div><p><strong>INSIGHTS →</strong> 듀얼 엔진 + 거주민/종사자 니즈 + ESG</p><p><strong>LOGIC →</strong> '내부 엔진'을 위한 비상업적, 포용적 공간은<br>기업의 사회적 책임을 실현하는 가장 직접적인 방법</p><blockquote><strong>전략 방향 →</strong> 모두에게 열린 공공의 휴식 공간</blockquote><button class="gemini-api-button" data-strategy="도시의 거실">✨ 실행 아이디어 제안받기</button></div><div class="placeholder-img" style="border:none; padding:0; background:none;"><img src="https://images.unsplash.com/photo-1549922579-a75945a16d55?q=80&w=2070&auto=format&fit=crop" class="rounded-lg object-cover" alt="Spacious modern public lounge"></div></div>` },
+            { title: 'Strategy 2', subtitle: '하이퍼로컬 문화 허브', isStrategy: true, content: `<div class="grid-2-col items-center"><div><p><strong>INSIGHTS →</strong> 성숙기 상권 + 방문객 니즈 + 건축 철학</p><p><strong>LOGIC →</strong> 지역 문화를 존중하고 현대적으로 재해석하여<br>공간의 진정성을 확보하고 '문화적 앵커'로 자리매김</p><blockquote><strong>전략 방향 →</strong> 지역 정체성을 담는 문화 구심점</blockquote><button class="gemini-api-button" data-strategy="하이퍼로컬 문화 허브">✨ 실행 아이디어 제안받기</button></div><div class="placeholder-img" style="border:none; padding:0; background:none;"><img src="https://images.unsplash.com/photo-1618210369809-1135153c5e3a?q=80&w=1964&auto=format&fit=crop" class="rounded-lg object-cover" alt="Local craftmanship"></div></div>` },
+            { title: 'Strategy 3', subtitle: '기술 성소 <span class="text-lg font-normal">(Tech Sanctuary)</span>', isStrategy: true, content: `<div class="grid-2-col items-center"><div><p><strong>INSIGHTS →</strong> 크래프톤 비전 + 종사자/방문객 니즈 + IT허브</p><p><strong>LOGIC →</strong> 추상적 기술 비전을 대중과 잠재 인재들이<br>직관적으로 경험하는 '물리적 인터페이스' 역할</p><blockquote><strong>전략 방향 →</strong> 기술 시연과 크리에이터 교류의 장</blockquote><button class="gemini-api-button" data-strategy="기술 성소">✨ 실행 아이디어 제안받기</button></div><div class="placeholder-img" style="border:none; padding:0; background:none;"><img src="https://images.unsplash.com/photo-1554474052-52b28f1f32d3?q=80&w=2070&auto=format&fit=crop" class="rounded-lg object-cover" alt="Interactive technology installation"></div></div>` },
+            { title: 'Strategy 4', subtitle: '팬덤 세계관 확장', isStrategy: true, content: `<div class="grid-2-col items-center"><div><p><strong>INSIGHTS →</strong> 글로벌 팬덤 니즈 + K-컬처 허브 + 강력한 IP</p><p><strong>LOGIC →</strong> IP 기반의 강력한 집객 콘텐츠 제공으로<br>온라인 팬심을 오프라인 충성도로 전환</p><blockquote><strong>전략 방향 →</strong> IP 기반의 몰입형 팬덤 공간</blockquote><button class="gemini-api-button" data-strategy="팬덤 세계관 확장">✨ 실행 아이디어 제안받기</button></div><div class="placeholder-img" style="border:none; padding:0; background:none;"><img src="https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=2070&auto=format&fit=crop" class="rounded-lg object-cover" alt="Gaming event with fans"></div></div>` },
+            { title: 'Strategy 5', subtitle: '커뮤니티 플랫폼', isStrategy: true, content: `<div class="grid-2-col items-center"><div><p><strong>INSIGHTS →</strong> 듀얼 엔진 + '연결' 니즈 + 건축 컨셉</p><p><strong>LOGIC →</strong> 다른 배경의 사람들이 만나 시너지를 창출하도록<br>의도적으로 만남을 유도하는 플랫폼 기능</p><blockquote><strong>전략 방향 →</strong> 그룹의 경계를 허무는 소셜 허브</blockquote><button class="gemini-api-button" data-strategy="커뮤니티 플랫폼">✨ 실행 아이디어 제안받기</button></div><div class="placeholder-img" style="border:none; padding:0; background:none;"><img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=2071&auto=format&fit=crop" class="rounded-lg object-cover" alt="People networking in a community space"></div></div>` },
+            { title: 'Benchmark', subtitle: '성공적인 기업 공간 사례', content: `<div class="grid-2-col"><div><h4 class="text-xl font-semibold mb-2">Hyundai Card Library</h4><p><strong>KEY:</strong> 명확한 타겟, 깊이 있는 콘텐츠<br>→ 강력한 브랜딩 및 팬덤 구축</p></div><div><h4 class="text-xl font-semibold mb-2">Apple Park Visitor Center</h4><p><strong>KEY:</strong> 기술 시연, 브랜드 철학 체험<br>→ 방문객을 브랜드의 전도사로 전환</p></div></div>` },
+
+            // 4. The Play
+            { type: 'section_title', title: '4부', subtitle: 'The Play<span class="break-word">하이브리드 모델 제안</span>' },
+            { title: 'The Inevitable Conclusion', subtitle: '왜 <span class="text-gradient">하이브리드</span> 모델인가?', content: `<p>성공은 <strong>'제로섬 게임'이 아닌, '지혜로운 융합'</strong>에 달려있음</p><div class="grid-2-col mt-6"><div><h4>'Universe(팬덤)' 모델 Only</h4><p class="text-red-500">→ 지역사회 소외, 공공성 상실</p></div><div><h4>'Commons(커뮤니티)' 모델 Only</h4><p class="text-red-500">→ 브랜드 임팩트 및 팬덤 강화 기회 상실</p></div></div><p class="mt-6 text-center text-xl"><strong>∴ 각 모델의 핵심 장점을 결합한 하이브리드 모델이 최적의 선택</strong></p>` },
+            { title: 'Core Concept', subtitle: 'Community-driven Fan Universe', content: `<blockquote>팬덤을 위한 핵심 브랜드 경험(Fan Universe)은 유지하되,<br>공간의 기반은 지역 커뮤니티(Community)에 두어<br>성수동의 '일상'과 크래프톤의 '이벤트'가 자연스럽게 조화되는 모델</blockquote><div class="placeholder-chart" style="text-align: center;"><svg width="60%" viewBox="0 0 400 250"><circle cx="150" cy="125" r="100" fill="rgba(13,110,253,0.1)" stroke="#0D6EFD" stroke-width="2"/><text x="110" y="130" fill="#212529" font-size="20">Community</text><circle cx="250" cy="125" r="100" fill="rgba(13,188,253,0.1)" stroke="#0DBCFD" stroke-width="2"/><text x="210" y="130" fill="#212529" font-size="20">Fan Universe</text></svg></div>` },
+            { title: 'Spatial Strategy', subtitle: 'Conceptual Zoning', content: `<p>다양한 니즈를 충족시키기 위한<br>유연하고 복합적인 공간 구획 제안</p><div class="placeholder-map mt-4"><div class="placeholder-visual"><svg width="80%" height="80%" viewBox="0 0 400 300"><rect x="10" y="10" width="380" height="280" fill="#F8F9FA" stroke="#DEE2E6"/><rect x="10" y="10" width="180" height="280" fill="#0D6EFD" opacity="0.3"/><text x="100" y="150" text-anchor="middle">A. Urban<br/>Living Room</text><rect x="200" y="10" width="190" height="130" fill="#0DBCFD" opacity="0.3"/><text x="295" y="80" text-anchor="middle">B. Tech<br/>Sanctuary</text><rect x="200" y="150" width="90" height="140" fill="#CED4DA" opacity="0.5"/><text x="245" y="220" text-anchor="middle">C. Fan<br/>Universe</text><rect x="300" y="150" width="90" height="140" fill="#CED4DA" opacity="0.5"/><text x="345" y="220" text-anchor="middle">D. Hyper<br/>local Hub</text></svg></div><div class="placeholder-description"><div class="placeholder-title">1층 공간 평면도 위 컬러링 맵 (Floor Plan Map)</div><div class="placeholder-content">제안하는 1층 공간의 평면도 위에 'Urban Living Room', 'Tech Sanctuary' 등 각 구역(Zone)을 다른 색상으로 표시하고, 예상 유저 동선을 화살표로 시각화.</div></div></div>` },
+            { title: 'Program Strategy', subtitle: 'Zone별 콘텐츠 및 프로그램', content: `<table><thead><tr><th>Zone</th><th>Core Strategy</th><th>Key Programs</th></tr></thead><tbody><tr><td><strong>A. Urban Living Room</strong></td><td>도시의 거실, 커뮤니티 플랫폼</td><td>오픈 라운지, 로컬 F&B, 소규모 강연</td></tr><tr><td><strong>B. Tech Sanctuary</strong></td><td>기술 성소</td><td>인터랙티브 AI/게임 기술 데모, 기술 밋업</td></tr><tr><td><strong>C. Fan Universe</strong></td><td>팬덤 세계관 확장</td><td>IP 기반 몰입형 전시, 한정판 굿즈 스토어</td></tr><tr><td><strong>D. Hyperlocal Hub</strong></td><td>하이퍼로컬 문화 허브</td><td>로컬 크리에이터 협업 전시/팝업</td></tr></tbody></table>` },
+            { title: 'Risk Analysis', subtitle: '리스크 분석 및 완화 전략', content: `<table><thead><tr><th>Risk</th><th>Impact</th><th>Mitigation Strategy</th></tr></thead><tbody><tr><td><strong>정체성 모호성</strong></td><td>High</td><td>각 Zone의 컨셉을 명확히 하되, 유연한 연결 동선 설계</td></tr><tr><td><strong>운영 비용 증가</strong></td><td>Medium</td><td>수익성 프로그램(F&B, 굿즈)과 비수익성 프로그램(라운지)의 균형</td></tr><tr><td><strong>타겟 간 충돌</strong></td><td>Medium</td><td>시간대별, 요일별 프로그램 차별화 운영 (예: 주중-직장인, 주말-가족/팬)</td></tr></tbody></table>` },
+            
+            // 5. The Finale
+            { type: 'section_title', title: '5부', subtitle: 'The Finale<span class="break-word">비전과 로드맵</span>' },
+            { title: 'Final Vision', subtitle: '성수동의 새로운 <span class="text-gradient">문화적 앵커</span>', content: `<p>단순한 기업 사옥을 넘어,<br>사람과 문화, 기술을 연결하는 성수동의 새로운 중심</p><div class="grid-3-col mt-8 text-center"><div><h4 class="text-xl font-semibold">기술과 예술의 만남</h4></div><div><h4 class="text-xl font-semibold">지역과 글로벌의 만남</h4></div><div><h4 class="text-xl font-semibold">일상과 비일상의 만남</h4></div></div>` },
+            { title: 'Expected Outcomes', subtitle: '기대효과 및 핵심성과지표(KPI)', content: `<div class="grid-2-col"><div><h4 class="text-xl font-semibold mb-2">정성적 기대효과</h4><ul class="list-disc list-inside"><li>브랜드 이미지 제고 (혁신, 상생)</li><li>우수 인재 유치 기여</li><li>지역사회와의 유대감 형성</li><li>글로벌 팬덤 충성도 강화</li></ul></div><div><h4 class="text-xl font-semibold mb-2">KPI (예시)</h4><ul class="list-disc list-inside"><li>일평균 방문객 수 & 체류 시간</li><li>프로그램별 참여율 및 만족도</li><li>SNS 언급량 및 긍정 반응률</li><li>로컬 크리에이터 협업 건수</li></ul></div></div>` },
+            { title: 'Roadmap', subtitle: '단계별 실행 로드맵', content: `<h4 class="text-2xl font-semibold mb-3 text-center">Implementation Roadmap</h4><div class="placeholder-chart"><div class="placeholder-visual"><svg width="95%" height="95%" viewBox="0 0 800 250" font-family="sans-serif" font-size="12"><g><text x="10" y="65">Phase 1: 기획</text><rect x="100" y="50" width="200" height="25" fill="#0D6EFD" /></g><g><text x="10" y="115">Phase 2: 구축</text><rect x="300" y="100" width="300" height="25" fill="#0DBCFD" /></g><g><text x="10" y="165">Phase 3: 운영</text><rect x="600" y="150" width="180" height="25" fill="#CED4DA" /></g><path d="M100 200 H780" stroke="#DEE2E6"/><text x="100" y="220">25년4Q</text><text x="300" y="220">26년2Q</text><text x="600" y="220">27년1Q</text></svg></div><div class="placeholder-description"><div class="placeholder-title">간트 차트 (Gantt Chart)</div><div class="placeholder-content"><strong>X축:</strong> 시간 (2025년 4분기 ~ 2027년 2분기)<br><strong>Y축:</strong> 주요 과업 (Phase 1: 기획/설계, Phase 2: 구축/오픈, Phase 3: 운영/고도화)<br><strong>내용:</strong> 각 과업의 시작과 종료 시점, 마일스톤(예: 설계 완료, 시공사 선정, 그랜드 오픈)을 타임라인 위에 표시.</div></div></div>` },
+            { type: 'final', title: '감사합니다', subtitle: 'Q & A' },
+        ];
+
+
+        const slideContainer = document.querySelector('.slide-container');
+        const modal = document.getElementById('ai-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalBody = document.getElementById('modal-body');
+        const modalCloseBtn = document.getElementById('modal-close-btn');
+        const aiAssistantBtn = document.getElementById('ai-assistant-btn');
+        let currentSlide = 0;
+
+        // --- Gemini API Call Function ---
+        const callGeminiApi = async (prompt, systemPrompt) => {
+            modalTitle.textContent = "AI가 생각 중입니다...";
+            modalBody.innerHTML = '<div class="loader"></div>';
+            modal.style.display = 'flex';
+
+            const apiKey = "";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+            const payload = {
+                contents: [{ parts: [{ text: prompt }] }],
+                systemInstruction: {
+                    parts: [{ text: systemPrompt }]
+                },
+            };
+
+            let response;
+            let result;
+            let retries = 3;
+            let delay = 1000;
+
+            while (retries > 0) {
+                try {
+                    response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (response.ok) {
+                        result = await response.json();
+                        const candidate = result.candidates?.[0];
+                        if (candidate && candidate.content?.parts?.[0]?.text) {
+                            const text = candidate.content.parts[0].text;
+                            modalBody.innerHTML = marked.parse(text);
+                            return;
+                        }
+                    }
+                } catch (error) {
+                    console.error('API call failed:', error);
+                }
+                retries--;
+                if(retries > 0) await new Promise(resolve => setTimeout(resolve, delay *= 2));
+            }
+
+            modalBody.innerHTML = '<p>AI 응답을 가져오는 데 실패했습니다. 잠시 후 다시 시도해 주세요.</p>';
+        };
+
+        const generateReportSummary = () => {
+            const allText = slideData.map(s => `제목: ${s.title}, 부제: ${s.subtitle}, 내용: ${s.content || ''}`).join('\n\n').replace(/<[^>]*>/g, ' ');
+            const systemPrompt = "당신은 주어진 보고서의 내용을 핵심만 정확하게 요약하는 전문 전략 분석가입니다. 한국어로 답변해주세요.";
+            const prompt = `다음은 크래프톤 성수 신사옥 공간 전략에 대한 보고서 내용입니다. 전체 내용을 3가지 핵심 불렛포인트로 요약해주세요:\n\n${allText}`;
+            modalTitle.textContent = "보고서 요약";
+            callGeminiApi(prompt, systemPrompt);
+        };
+
+        const generateStrategyIdeas = (strategy) => {
+            const slide = slideData.find(s => s.isStrategy && s.title.includes(strategy)) || slideData.find(s => s.isStrategy && s.content.includes(strategy));
+            if (!slide) return;
+
+            const contentText = (slide.content || '').replace(/<[^>]*>/g, ' ');
+            const systemPrompt = "당신은 혁신적인 공간 마케팅 및 기획 전문가입니다. 주어진 전략을 바탕으로, 사용자가 바로 실행해 볼 수 있을 법한 구체적이고 창의적인 아이디어 3가지를 제안해주세요. 각 아이디어는 제목과 간단한 설명으로 구성됩니다. 한국어로 답변해주세요.";
+            const prompt = `크래프톤 성수 신사옥의 1층 공간에 대한 다음 전략을 실행하기 위한 구체적인 아이디어 3가지를 제안해주세요:\n\n전략명: ${strategy}\n전략 내용: ${contentText}`;
+            modalTitle.textContent = `"${strategy}" 실행 아이디어`;
+            callGeminiApi(prompt, systemPrompt);
+        };
+
+        function createSlide(data, index) {
+            const slide = document.createElement('div');
+            slide.className = 'slide';
+            slide.dataset.index = index;
+
+            let innerHTML = '';
+            if (data.type === 'title') {
+                innerHTML = `<div class="slide-content text-center justify-center">
+                                <h1 class="font-bold text-7xl mb-4">${data.title}</h1>
+                                <h2 class="text-4xl font-semibold">${data.subtitle}</h2>
+                                <div class="absolute bottom-24 left-0 right-0 text-center"><p class="text-lg text-gray-500">${data.meta}</p></div>
+                             </div>`;
+            } else if (data.type === 'section_title') {
+                 innerHTML = `<div class="slide-content text-center justify-center">
+                                <p class="text-2xl text-gray-500 mb-2">${data.title}</p>
+                                <h2 class="text-6xl font-bold">${data.subtitle}</h2>
+                              </div>`;
+            } else if (data.type === 'final') {
+                innerHTML = `<div class="slide-content text-center justify-center">
+                                <h1 class="font-bold text-7xl mb-4">${data.title}</h1>
+                                <h2 class="text-4xl font-semibold">${data.subtitle}</h2>
+                             </div>`;
+            } else {
+                 innerHTML = `<div class="slide-content">
+                                <p class="text-gray-500 mb-2">${data.title}</p>
+                                <h2 class="text-4xl font-bold mb-8">${data.subtitle}</h2>
+                                ${data.content}
+                             </div>`;
+            }
+
+            slide.innerHTML = innerHTML;
+            return slide;
+        }
+
+        function renderSlides() {
+            slideContainer.innerHTML = ''; // Clear existing slides
+            slideData.forEach((data, index) => {
+                const slideElement = createSlide(data, index);
+                slideContainer.appendChild(slideElement);
+            });
+            // Re-attach event listeners for Gemini buttons after rendering
+            document.querySelectorAll('.gemini-api-button').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const strategy = e.target.dataset.strategy;
+                    generateStrategyIdeas(strategy);
+                });
+            });
+        }
+        
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const slideCounter = document.getElementById('slide-counter');
+
+        function showSlide(index) {
+            const slides = document.querySelectorAll('.slide');
+            slides.forEach((slide, i) => {
+                slide.classList.toggle('active', i === index);
+            });
+            currentSlide = index;
+            updateNav();
+        }
+
+        function updateNav() {
+            const totalSlides = slideData.length;
+            prevBtn.disabled = currentSlide === 0;
+
+            // The "Next" button is now always enabled, but its text changes on the last slide.
+            nextBtn.disabled = false; 
+            if (currentSlide === totalSlides - 1) {
+                nextBtn.textContent = '처음으로';
+            } else {
+                nextBtn.textContent = '다음';
+            }
+            
+            slideCounter.textContent = `${currentSlide + 1} / ${totalSlides}`;
+        }
+
+        prevBtn.addEventListener('click', () => {
+            if (currentSlide > 0) {
+                showSlide(currentSlide - 1);
+            }
+        });
+
+        nextBtn.addEventListener('click', () => {
+            // If not on the last slide, go to the next one.
+            if (currentSlide < slideData.length - 1) {
+                showSlide(currentSlide + 1);
+            } else {
+                // If on the last slide, loop back to the first slide.
+                showSlide(0);
+            }
+        });
+        
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' && !nextBtn.disabled) {
+                nextBtn.click();
+            } else if (e.key === 'ArrowLeft' && !prevBtn.disabled) {
+                prevBtn.click();
+            }
+        });
+
+        // Modal event listeners
+        modalCloseBtn.addEventListener('click', () => modal.style.display = 'none');
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+        aiAssistantBtn.addEventListener('click', () => {
+             modalTitle.textContent = "AI 어시스턴트";
+             modalBody.innerHTML = `<button id="summarize-btn" class="gemini-api-button w-full text-center">보고서 요약하기</button>`;
+             document.getElementById('summarize-btn').addEventListener('click', generateReportSummary);
+             modal.style.display = 'flex';
+        });
+
+        // Initial setup
+        renderSlides();
+        showSlide(0);
+
+    </script>
+
+    <script type="module">
+        import {Runtime, Inspector} from "/_observablehq/runtime.js";
+    
+        const mounts = [
+        { id: "#mount-line_traffic", module: "/cells-line_traffic?module", name: "line_traffic" },
+        { id: "#mount-map_seongsu",  module: "/cells-map_seongsu?module",  name: "map_seongsu" },
+        { id: "#mount-table_top10",  module: "/cells-table_top10?module",  name: "table_top10" }
+        ];
+    
+        const load = async ({id, module, name}) => {
+        const el = document.querySelector(id);
+        if (!el || el.dataset.loaded) return;
+        try {
+            const response = await fetch(module);
+            const define = await response.text();
+            new Runtime().module(define, n => (n === name ? Inspector.into(id)() : null));
+            el.dataset.loaded = "1";
+        } catch (error) {
+            console.error(`Failed to load module ${module}:`, error);
+            el.innerHTML = `<div style="color: #e74c3c; padding: 1rem; text-align: center;">차트 로드 실패: ${error.message}</div>`;
+        }
+        };
+    
+        const io = new IntersectionObserver(entries => {
+        for (const e of entries) if (e.isIntersecting) {
+            const id = "#" + e.target.id;
+            const cfg = mounts.find(m => m.id === id);
+            if (cfg) load(cfg);
+        }
+        }, { rootMargin: "200px" });
+    
+        const observeAllMounts = () => {
+        mounts.forEach(m => {
+            const el = document.querySelector(m.id);
+            if (el) io.observe(el);
+        });
+        };
+    
+        const loadCurrentSlideMounts = () => {
+        const active = document.querySelector('.slide.active');
+        if (!active) return;
+        mounts.forEach(m => {
+            const el = active.querySelector(m.id);
+            if (el && !el.dataset.loaded) load(m);
+        });
+        };
+    
+        // 초기 실행
+        observeAllMounts();
+        loadCurrentSlideMounts();
+    
+        // 슬라이드 전환 시 로드
+        const origShowSlide = window.showSlide;
+        window.showSlide = function(index){
+        origShowSlide(index);
+        requestAnimationFrame(() => {
+            observeAllMounts();
+            loadCurrentSlideMounts();
+        });
+        };
+    </script>
+
+</body>
+</html>
+
+
+
+
+
